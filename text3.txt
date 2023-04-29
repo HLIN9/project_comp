@@ -1,1 +1,7 @@
+https://myanimelist.net/manga.php?q=one%20piece&cat=manga
+https://myanimelist.net/manga.php?q=descent%20of%20the%20demonic%20master&cat=manga
 
+
+https://myanimelist.net/manga.php?q=
+name, with all spaces replaced with %20
+&cat=manga
