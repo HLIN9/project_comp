@@ -1,6 +1,0 @@
-Generate a python script that achieves the following:
-- Reads in the file 'text3.txt'. You can expect each line of this to be the title of a comic book
-- Gathers the overall rating of each individual book item from the website, 
-
-
-<div class="score-label score-7">7.52</div>
