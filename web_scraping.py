@@ -5,20 +5,29 @@ import numpy as np
 
 def get_rating(book_title:str):
     # create search url
-    url = f"https://myanimelist.net/manga.php?q={book_title.replace(' ', '%20')}&cat=manga"
-
+    #url = f"https://myanimelist.net/manga.php?q={book_title.replace(' ', '%20')}&cat=manga"        #########
+    url = f"https://myanimelist.net/anime.php?q={book_title.replace(' ', '%20')}&cat=anime"
     # make request and parse html
     response = requests.get(url)
     soup = BeautifulSoup(response.content, "html.parser")
 
-    # extract book url from search results
-    book_url = soup.find("a", {"class": "hoverinfo_trigger"})["href"] # type: ignore
+    # # extract book url from search results
+    # book_url = soup.find("a", {"class": "hoverinfo_trigger"})["href"] # type: ignore
 
-    # make request to book page and parse html
-    response = requests.get(book_url) # type: ignore
-    soup = BeautifulSoup(response.content, "html.parser")
+    # # make request to book page and parse html
+    # response = requests.get(book_url) # type: ignore
+    # soup = BeautifulSoup(response.content, "html.parser")
 
     try:
+        # extract book url from search results
+        book_url = soup.find("a", {"class": "hoverinfo_trigger"})["href"] # type: ignore
+
+        # make request to book page and parse html
+        response = requests.get(book_url) # type: ignore
+        soup = BeautifulSoup(response.content, "html.parser")
+
+
+        
         # extract score value
         score_value = soup.find("span", {"itemprop": "ratingValue"}).text # type: ignore
     except:
@@ -32,7 +41,8 @@ if __name__ == '__main__':
     # input book title
     # book_title = input("Enter book title: ")
 
-    with open('text1.txt', 'r') as f1:
+    #with open('text1.txt', 'r') as f1:         ##########
+    with open('text2.txt', 'r') as f1:
         txt_1 = f1.read().lower().splitlines()
 
     # Create an empty set to store unique, cleaned items
