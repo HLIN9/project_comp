@@ -67,6 +67,8 @@ class Watchlist_GUI(ttk.Frame):
         try:
             # Split the watchlist content into lines and clean up each line
             titles = [clean_string(line) for line in watchlist_content.split('\n')]
+            # Remove any duplicates in the new list
+            titles = list(set(titles))
 
             # Connect to the database and get the existing titles
             conn = sqlite3.connect('watchlist.sqlite')
@@ -88,7 +90,7 @@ class Watchlist_GUI(ttk.Frame):
         display_window.geometry("800x600")
 
         # Connect to the database and extract the table contents
-        rows = self.cur.execute(f"SELECT * FROM {table_name}").fetchall()
+        rows = self.cur.execute(f"SELECT * FROM {table_name} ORDER BY Name ASC").fetchall()
         column_names = [description[0] for description in self.cur.description]
 
         # Create the treeview widget
