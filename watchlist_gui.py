@@ -62,21 +62,37 @@ class Watchlist_GUI(ttk.Frame):
         else:
             messagebox.showerror('Error', 'Invalid watchlist type')
             return
+        
+        #Adding the new titles
+        try:
+            # Split the watchlist content into lines and clean up each line
+            titles = [clean_string(line) for line in watchlist_content.split('\n')]
 
-        # Split the watchlist content into lines and clean up each line
-        titles = [clean_string(line) for line in watchlist_content.split('\n')]
+            # Connect to the database and get the existing titles
+            conn = sqlite3.connect('watchlist.sqlite')
+            self.cur = conn.cursor()
+            self.cur.execute(f"SELECT Name FROM {table_name}")
+            existing_titles = [clean_string(row[0]) for row in self.cur.fetchall()]
 
-        # Connect to the database and get the existing titles
-        conn = sqlite3.connect('watchlist.sqlite')
-        self.cur = conn.cursor()
-        self.cur.execute(f"SELECT Name FROM {table_name}")
-        existing_titles = [clean_string(row[0]) for row in self.cur.fetchall()]
+            # Insert new titles into the database
+            new_titles = [title for title in titles if title not in existing_titles]
+            for title in new_titles:
+                self.cur.execute(f"INSERT INTO {table_name} (Name, Status) VALUES (?, ?)", (title, 'Unread'))
+        except:
+            messagebox.showerror('Error', 'Error inserting titles into watchlist')
+            return
 
-        # Insert new titles into the database
-        new_titles = [title for title in titles if title not in existing_titles]
-        for title in new_titles:
-            self.cur.execute(f"INSERT INTO {table_name} (Name, Status) VALUES (?, ?)", (title, 'Unread'))
 
+        #Displaying the new database
+        view_window = tk.Toplevel(self)
+        view_window.title(f"{table_name.capitalize()} Watchlist")
+        ttk.Label(view_window, text="Name").grid(row=0, column=0, padx=5, pady=5)
+        ttk.Label(view_window, text="Status").grid(row=0, column=1, padx=5, pady=5)
+        self.cur.execute(f"SELECT * FROM {table_name}")
+        for i, row in enumerate(self.cur.fetchall()):
+            ttk.Label(view_window, text=row[0]).grid(row=i+1, column=0, padx=5, pady=5)
+            ttk.Label(view_window, text=row[1]).grid(row=i+1, column=1, padx=5, pady=5)        
+        
         # Commit the changes and close the database connection
         conn.commit()
         conn.close()
