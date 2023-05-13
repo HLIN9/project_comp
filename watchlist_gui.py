@@ -2,6 +2,14 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import tkinter.ttk as ttk
 from web_scraping import get_rating
+import sqlite3
+import re
+
+def clean_string(title):
+    title = ''.join(c for c in title if c.isalnum() or c.isspace())
+    title = title.title()
+    title = title.strip()
+    return title
 
 class Watchlist_GUI(ttk.Frame):
     def __init__(self, parent=None):
@@ -19,6 +27,10 @@ class Watchlist_GUI(ttk.Frame):
         #TODO: Make the needed widgets
         self.make_widgets()
 
+        # Connect to database
+        self.conn = sqlite3.connect('watchlist.sqlite')
+        self.cur = self.conn.cursor()
+
     def make_widgets(self)->None:
         # Input field for new watchlist
         ttk.Label(self, text='New Watchlist:').grid(row=0, column=0)
@@ -34,45 +46,48 @@ class Watchlist_GUI(ttk.Frame):
         # Load resource (present + added new)
         ttk.Button(self, text='Load Watchlist', command=self.load_resource).grid(row=0, column=2)
         ttk.Button(self, text='Help', command=self.get_help).grid(row=0, column=3)
-    
-    def load_resource(self, 
-                      event=None) -> None:
-        """
-        This function gets the new watchlist from the Textbox and loads it to the appropriate watchlist table in the database.
-        """
-        # Get the new watchlist
-        new_watchlist = self.watchlist_box.get('1.0', tk.END)
 
-        # Get the watchlist type
-        watchlist_type = self.watchlist_type.get()
+    def load_resource(self, event=None) -> None:
+        # Get the watchlist content from the text box
+        watchlist_content = self.watchlist_box.get('1.0', 'end-1c')
 
-        # Connect to the database
-        import sqlite3
-        conn = sqlite3.connect('watchlist.sqlite')
-        c = conn.cursor()
+        # Get the watchlist type from the entry bar
+        watchlist_type = self.watchlist_type.get().lower()
 
-        # Choose the appropriate table based on the watchlist type
-        if watchlist_type.lower() == 'anime':
+        # Define the table name based on the watchlist type
+        if watchlist_type == 'anime':
             table_name = 'anime_watchlist'
-        elif watchlist_type.lower() == 'manga':
+        elif watchlist_type == 'manga':
             table_name = 'manga_watchlist'
         else:
-            messagebox.showerror('Invalid Watchlist Type', 'Please choose a valid watchlist type (Anime or Manga)')
+            messagebox.showerror('Error', 'Invalid watchlist type')
             return
 
-        # Get the existing titles in the table
-        existing_titles = [row[0] for row in c.execute(f"SELECT Name FROM {table_name}")]
-        
-        # Add new titles to the table
-        for title in new_watchlist.split('\n'):
-            title = ''.join(c for c in title if c.isalnum()).lower()
-            if title and title not in existing_titles:
-                c.execute(f"INSERT INTO {table_name} (Name, Status) VALUES (?, 'Unread')", (title,))
+        # Split the watchlist content into lines and clean up each line
+        titles = [clean_string(line) for line in watchlist_content.split('\n')]
+
+        # Connect to the database and get the existing titles
+        conn = sqlite3.connect('watchlist.sqlite')
+        self.cur = conn.cursor()
+        self.cur.execute(f"SELECT Name FROM {table_name}")
+        existing_titles = [clean_string(row[0]) for row in self.cur.fetchall()]
+
+        # Insert new titles into the database
+        new_titles = [title for title in titles if title not in existing_titles]
+        for title in new_titles:
+            self.cur.execute(f"INSERT INTO {table_name} (Name, Status) VALUES (?, ?)", (title, 'Unread'))
+
+        # Commit the changes and close the database connection
         conn.commit()
         conn.close()
 
-        # Confirm that the new titles were added to the table
-        messagebox.showinfo('Watchlist Updated', 'The new titles were added to the watchlist successfully.')
+        # Show a message box with the number of new titles added
+        num_new_titles = len(new_titles)
+        if num_new_titles > 0:
+            messagebox.showinfo('Success', f'{num_new_titles} new titles added to {table_name}')
+        else:
+            messagebox.showinfo('Success', f'No new titles added to {table_name}')
+
 
     def get_help(self)->None:
         pass
