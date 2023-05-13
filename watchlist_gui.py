@@ -82,16 +82,33 @@ class Watchlist_GUI(ttk.Frame):
             messagebox.showerror('Error', 'Error inserting titles into watchlist')
             return
 
+        # Create a new window to display the contents of the table
+        display_window = tk.Toplevel(self)
+        display_window.title(f"{watchlist_type} Watchlist")
+        display_window.geometry("800x600")
 
-        #Displaying the new database
-        view_window = tk.Toplevel(self)
-        view_window.title(f"{table_name.capitalize()} Watchlist")
-        ttk.Label(view_window, text="Name").grid(row=0, column=0, padx=5, pady=5)
-        ttk.Label(view_window, text="Status").grid(row=0, column=1, padx=5, pady=5)
-        self.cur.execute(f"SELECT * FROM {table_name}")
-        for i, row in enumerate(self.cur.fetchall()):
-            ttk.Label(view_window, text=row[0]).grid(row=i+1, column=0, padx=5, pady=5)
-            ttk.Label(view_window, text=row[1]).grid(row=i+1, column=1, padx=5, pady=5)        
+        # Connect to the database and extract the table contents
+        rows = self.cur.execute(f"SELECT * FROM {table_name}").fetchall()
+        column_names = [description[0] for description in self.cur.description]
+
+        # Create the treeview widget
+        tree = ttk.Treeview(display_window, columns=column_names, show="headings")
+        tree.pack(side="left", fill="both", expand=True)
+
+        # Configure the scrollbars
+        vsb = ttk.Scrollbar(display_window, orient="vertical", command=tree.yview)
+        vsb.pack(side="right", fill="y")
+        hsb = ttk.Scrollbar(display_window, orient="horizontal", command=tree.xview)
+        hsb.pack(side="bottom", fill="x")
+        tree.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
+
+        # Add the data to the treeview widget
+        for row in rows:
+            tree.insert("", "end", values=row)
+
+        # Set the column headings
+        for i, column_name in enumerate(column_names):
+            tree.heading(i, text=column_name)       
         
         # Commit the changes and close the database connection
         conn.commit()
